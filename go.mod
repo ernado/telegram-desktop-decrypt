@@ -1,8 +1,10 @@
 module github.com/atilaromero/telegram-desktop-decrypt
 
+go 1.16
+
 require (
+	github.com/gotd/ige v0.1.5
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
-	github.com/karlmcguire/ige v0.0.0-20180620203807-493ac28b459a
 	github.com/lunixbochs/struc v0.0.0-20180408203800-02e4c2afbb2a
 	github.com/pkg/errors v0.8.1
 	github.com/spf13/cobra v0.0.3
