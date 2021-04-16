@@ -8,7 +8,7 @@ import (
 
 	"golang.org/x/crypto/pbkdf2"
 
-	"github.com/karlmcguire/ige"
+	"github.com/gotd/ige"
 )
 
 // CreateLocalKey creates the key used by DecryptLocal. The default password is empty.

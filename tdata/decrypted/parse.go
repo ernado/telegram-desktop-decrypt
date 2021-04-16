@@ -97,16 +97,73 @@ func ParseCache(data []byte, keytype uint32) (interface{}, error) {
 	}
 }
 
+type connectionType struct {
+	// This is partially parsed and works only for specific case.
+}
+
+func parseConnectionType(r *bytes.Reader) (*connectionType, error) {
+	var connType int32
+	if err := unpack(r, &connType); err != nil {
+		return nil, err
+	}
+
+	const (
+		dbictAuto           = 0
+		dbictHttpAuto       = 1 // not used
+		dbictHttpProxy      = 2
+		dbictTcpProxy       = 3
+		dbictProxiesListOld = 4
+		dbictProxiesList    = 5
+	)
+
+	switch connType {
+	case dbictProxiesList:
+		var header struct {
+			Count    int32
+			Index    int32
+			Settings int32
+			Calls    int32
+		}
+		if err := unpack(r, &header); err != nil {
+			return nil, err
+		}
+		if header.Count > 0 {
+			return nil, errors.New("not implemented")
+		}
+		switch header.Settings {
+		case 0, 2:
+			// System or Disabled.
+		case 1:
+			// Enabled.
+			return nil, errors.New("not implemented")
+		}
+		return &connectionType{}, nil
+	}
+
+	return nil, nil
+}
+
 func parseUserSetting(r *bytes.Reader, blockID uint32) (map[string]interface{}, error) {
 	userSetting := UserSetting{}
 	result := make(map[string]interface{})
 	fieldName, ok := DBI[blockID]
 	if !ok {
-		return nil, fmt.Errorf("blockID not found: %v", blockID)
+		return nil, fmt.Errorf("blockID not found: 0x%x", blockID)
 	}
+
+	// Special case parsers.
+	switch fieldName {
+	case "DbiConnectionType":
+		v, err := parseConnectionType(r)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse connection type: %w", err)
+		}
+		result[fieldName] = v
+		return result, nil
+	}
+
 	field := reflect.ValueOf(&userSetting).Elem().FieldByName(fieldName)
-	err := parseField(r, field)
-	if err != nil {
+	if err := parseField(r, field); err != nil {
 		return nil, fmt.Errorf("error: %v: %v", fieldName, err)
 	}
 	result[fieldName] = field.Interface()
